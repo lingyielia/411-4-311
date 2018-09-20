@@ -50,11 +50,25 @@ df = spark.read.csv("s3://nyc311forinsight/test/311_Service_Requests_from_2010_t
                     header=True, schema=final_struc)
 
 # only keep useful columns and fill null values
-df_short = df.select('agency', 'closed_date', 'complaint_type', 'created_date',
-                     'latitude', 'longitude', 'open_data_channel_type')
+df_short = df.select('Agency', 'Closed Date', 'Complaint Type', 'Created Date',
+                     'Latitude', 'Longitude', 'Open Data Channel Type')
 df_short = df_short.fillna({'Agency':'unknown', 'Closed Date':'2050-01-10T04:08:32.000', 'Complaint Type':'unknown',
                             'Created Date':'2000-09-14T04:08:32.000', 'Latitude':'20.86125849849244',
                             'Longitude':'-23.92566793186856', 'Open Data Channel Type':'unknown'})
 
 # write to s3
 df_short.write.save("s3://nyc311forinsight/cleaned_311_ny.csv", format='csv', header=True)
+
+# write to rds postgres
+df_short.write\
+    .format("jdbc")\
+    .option("url", "jdbc:postgresql://testdbins.cmbnhjkwvaqz.us-east-1.rds.amazonaws.com:5432/db311")\
+    .option("driver", "org.postgresql.Driver")\
+    .option("truncate", "true")\
+    .option("fetchsize", 1000)\
+    .option("batchsize", 100000)\
+    .option("dbtable", "events_test")\
+    .option("user", "lz_db_user")\
+    .option("password", "teawhalefortest") \
+    .mode('overwrite')\
+    .save()
