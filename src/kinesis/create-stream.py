@@ -1,3 +1,4 @@
+# create and config kinesis stream
 import boto3
 
 client = boto3.client('kinesis')

@@ -1,3 +1,4 @@
+# create table in rds postgre
 import psycopg2
 
 host = ''
@@ -5,6 +6,7 @@ database = ''
 user = ''
 password = ''
 
+# set schema
 text_cre = ('CREATE TABLE events(' +
                     'agency text,' +
                     'closed_date timestamp,' +
