@@ -1,5 +1,4 @@
-from pyspark.sql.types import (StructField, StringType,
-                               IntegerType, StructType)
+from pyspark.sql.types import *
 
 # define schema
 data_schema  = [StructField('Unique Key', IntegerType(), True),
