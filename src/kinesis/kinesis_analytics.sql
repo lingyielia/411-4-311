@@ -1,3 +1,4 @@
+-- real-time sql analysis on streaming input with a window of 1000 records
 CREATE OR REPLACE STREAM "DESTINATION_SQL_STREAM" (
     "incident_longitude" DOUBLE,
     "incident_latitude" DOUBLE,
