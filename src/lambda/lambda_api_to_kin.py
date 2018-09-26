@@ -57,7 +57,7 @@ def fmt(partitionkey, record):
     '''
     format record that will be aggregated and used in put_records
     '''
-    return { 'PartitionKey' : partitionkey, 'Data' : bytes(json.dumps(record), 'utf-8') }
+    return {'PartitionKey':partitionkey, 'Data':bytes(json.dumps(record), 'utf-8')}
 
 
 def flush(prepared):
@@ -65,7 +65,6 @@ def flush(prepared):
     put a list of records into kinesis using put_records
     '''
     try:
-        client_k.put_records(StreamName = 'data-collect7',
-                             Records = prepared)
+        client_k.put_records(StreamName='data-collect7', Records=prepared)
     except Exception as err:
         print("err when put_record: {}".format(err))
