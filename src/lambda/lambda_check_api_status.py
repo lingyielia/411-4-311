@@ -67,6 +67,7 @@ def lambda_handler(event, context):
         client_s3.put_object(Body=body, Bucket=BUCKET, Key=KEY)
     return ''
 
+
 def invoke_next_lam(client_l, data):
     '''
     invoke the lambda function that extract data from api to kinesis
@@ -75,6 +76,7 @@ def invoke_next_lam(client_l, data):
                     InvocationType='Event',
                     Payload=json.dumps(data))
     return ''
+
 
 def key_existing_del(client_s3, BUCKET, KEY):
     '''

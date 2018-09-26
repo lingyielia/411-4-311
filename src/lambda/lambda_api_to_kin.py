@@ -21,7 +21,7 @@ def lambda_handler(event, context):
         start_time = datetime.strptime(i, dt_format).date()
         print(start_time)
         retrive_record(client_s, client_k, start_time)
-        # time.sleep(10)
+        time.sleep(8)
     return ''
 
 
@@ -34,16 +34,38 @@ def retrive_record(client_s, client_k, start_time):
     time_rule = 'created_date > "' + str(y_day) + 'T00:00:12.000" and created_date < "' +\
                 str(t_day) + 'T00:00:12.000"'
 
-    results = client_s.get('fhrw-4uyv', where=time_rule, limit=600000)
-    # time.sleep(10)
+    results = client_s.get('fhrw-4uyv', where=time_rule, limit=800000)
     print(len(results))
 
     # put data to kinesis stream
-    for rec in results:
-        try:
-            client_k.put_record(StreamName = 'collectRecords',
-                                Data = json.dumps(rec),
-                                PartitionKey = 'nyc311')
-        except Exception as err:
-            print("err when put_record: {}".format(err))
+    count = 0
+    prepared = []
+    for i,rec in enumerate(results):
+        partitionkey = 'nyc311' + str(i*7 + 31)
+        one_rec = fmt(partitionkey, rec)
+        prepared.append(one_rec)
+
+        count += 1
+        if count == 500:
+            flush(prepared)
+            count = 0
+            prepared = []
     return ''
+
+    
+def fmt(partitionkey, record):
+    '''
+    format record that will be aggregated and used in put_records
+    '''
+    return { 'PartitionKey' : partitionkey, 'Data' : bytes(json.dumps(record), 'utf-8') }
+
+
+def flush(prepared):
+    '''
+    put a list of records into kinesis using put_records
+    '''
+    try:
+        client_k.put_records(StreamName = 'data-collect7',
+                             Records = prepared)
+    except Exception as err:
+        print("err when put_record: {}".format(err))
