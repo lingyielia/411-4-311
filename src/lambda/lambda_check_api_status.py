@@ -8,7 +8,7 @@ client_s = Socrata('data.cityofnewyork.us', '')
 client_s3 = boto3.client('s3')
 bucket = boto3.resource('s3')
 client_l = boto3.client('lambda')
-BUCKET = 'checknycapi'
+BUCKET = ''
 KEY = 'apistatus.txt'
 
 def lambda_handler(event, context):
