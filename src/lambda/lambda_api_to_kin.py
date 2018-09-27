@@ -67,11 +67,7 @@ def flush(prepared):
     put a list of records into kinesis using put_records
     '''
     try:
-<<<<<<< HEAD
         client_k.put_records(StreamName='data-collect8', Records=prepared)
-=======
-        client_k.put_records(StreamName='data-collect7', Records=prepared)
->>>>>>> 061725ba8f041f03eb66259be6b8f6c47de1bfe2
     except Exception as err:
         print("err when put_record: {}".format(err))
 
