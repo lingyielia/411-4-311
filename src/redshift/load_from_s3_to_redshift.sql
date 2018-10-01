@@ -1,5 +1,16 @@
--- create table
+-- create table for storing historical data
 create table events (
+  agency                 varchar(255)     not null,
+  closed_date            timestamp        not null,
+  complaint_type         varchar(255)     not null,
+  created_date           timestamp        not null,
+  latitude               double precision not null,
+  longitude              double precision not null,
+  open_data_channel_type varchar(255)     not null
+);
+
+-- table store most recent records only
+create table eventsNew (
   agency                 varchar(255)     not null,
   closed_date            timestamp        not null,
   complaint_type         varchar(255)     not null,
