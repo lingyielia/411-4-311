@@ -40,7 +40,8 @@ def put_data_to_redshift(host, database, user, password, port, res, KEY):
         print(err)
 
     with con.cursor() as cur:
-        insert_query = ("copy eventsNew from 's3://nyc311forinsight" + str(KEY) + "' "
+        insert_query = ("truncate eventsNew;"
+                        "copy eventsNew from 's3://nyc311forinsight" + str(KEY) + "' " +
                         "credentials 'aws_access_key_id=<>;aws_secret_access_key=<>' " +
                         "csv " +
                         "timeformat 'YYYY-MM-DDTHH:MI:SS';")
