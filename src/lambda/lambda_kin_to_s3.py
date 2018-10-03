@@ -4,8 +4,9 @@ import base64
 import time
 from datetime import datetime, timedelta
 from botocore.exceptions import ClientError
+from collections import defaultdict
 
-# set parameters for connecting with kinesis and s3
+# set parameters for connecting
 client_k = boto3.client('kinesis')
 client_s3 = boto3.client('s3')
 client_l = boto3.client('lambda')
@@ -14,7 +15,8 @@ BUCKET = 'nyc311forinsight'
 
 
 # rules for filling missing values
-change_ref = {'agency':'unknown', 'closed_date':'2050-01-10T04:08:32.000',
+change_ref = {'agency':'unknown',
+              'closed_date':'2050-01-10T04:08:32.000',
               'complaint_type':'unknown',
               'created_date':'2000-09-14T04:08:32.000',
               'latitude':'20.86125849849244',
@@ -27,14 +29,14 @@ def lambda_handler(event, context):
     read events records from kinesis, extract and store then into the database
     '''
     shard_iters = get_kinesis_shards(stream)
-    res = []
+    res = defaultdict(list)
     
     # loop through all shards to find data
     for shard in shard_iters:
         shard_it = shard['ShardIterator']
         try_count = 0
         while shard_it is not None:
-            if try_count == 5:
+            if try_count == 6:
                 break
             try_count += 1
             try:
@@ -45,32 +47,37 @@ def lambda_handler(event, context):
                     raise
                 print ('Throughput exceeded!')
                 time.sleep(0.2)
-                break
+                continue
      
-            # check number of data been found    
+            # check number of records been found    
             print(len(out['Records']))
             
-            # filter and output records of 7 days ago
-            one_ago = str(datetime.now().date() - timedelta(days=7))
-            start = time.time()
+            # filter and output records of 7 days before
+            time_threshold = (datetime.now().date() - timedelta(days=7))
             for record in out['Records']:
                 temp = json.loads(record['Data'])
                 cleaned = dict_clean(temp, change_ref)
-                
-                if cleaned['created_date'][:10] == one_ago:
-                    res.append(cleaned)
+                rec_date = datetime.strptime(cleaned['created_date'][:10],
+                                             '%Y-%m-%d').date()
+                if rec_date <= time_threshold:
+                    res[str(rec_date)].append(cleaned)
+                    
+            # search the next shard interator
             shard_it = out['NextShardIterator']
-            delta = time.time() - start
-            time.sleep(0.3 - delta)
+            time.sleep(0.2)
     
-    # put records of 7 days ago into s3
-    print(len(res))
-    final = '\n'.join([str(d['agency']) + ',' + str(d['closed_date']) + ',' +\
-            str(d['complaint_type']) + ',' + str(d['created_date']) +\
-            ',' + str(d['latitude']) + ',' + str(d['longitude']) + ',' +\
-            str(d['open_data_channel_type']) for d in res])
-    put_data_to_s3(client_s3, final, BUCKET)
-    invoke_next_lam(client_l)
+    # put records into s3
+    updated_day = {}
+    for i,day in enumerate(res.keys()):
+        print(day)
+        print(len(res[day]))
+        updated_day[str(i)] = day
+        final = '\n'.join([str(d['agency']) + ',' + str(d['closed_date']) + ',' +\
+                str(d['complaint_type']) + ',' + str(d['created_date']) +\
+                ',' + str(d['latitude']) + ',' + str(d['longitude']) + ',' +\
+                str(d['open_data_channel_type']) for d in res[day]])
+        put_data_to_s3(client_s3, final, BUCKET, day)
+    invoke_next_lam(client_l, updated_day)
 
 
 def dict_clean(temp, change_ref):
@@ -89,11 +96,11 @@ def dict_clean(temp, change_ref):
     return dict_keep
  
     
-def put_data_to_s3(client_s3, final, BUCKET):
+def put_data_to_s3(client_s3, final, BUCKET, file_date):
     '''
     put data into database
     '''
-    KEY = 'records_' + str(datetime.now().date() - timedelta(days=7)) + '.csv'
+    KEY = 'records_' + file_date + '.csv'
     client_s3.put_object(Body=final, Bucket=BUCKET, Key=KEY)
     
 
@@ -113,12 +120,16 @@ def get_kinesis_shards(stream):
     return shard_iters
     
 
-def invoke_next_lam(client_l):
+def invoke_next_lam(client_l, updated_day):
     '''
     invoke the lambda function that extract data kinesis and put to rds
     after cleaning
     '''
-    client_l.invoke(FunctionName='lambda_s3_to_redshift', InvocationType='Event')
+    data = {'custom': updated_day}
+    client_l.invoke(FunctionName='lambda_s3_to_redshift',
+                    InvocationType='Event',
+                    Payload=json.dumps(data))
+    print(data)
     return ''
 
 

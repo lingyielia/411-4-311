@@ -1,3 +1,4 @@
+from setting import host, user, password, keyid, key
 import boto3
 import base64
 import time
@@ -11,10 +12,10 @@ client_r = boto3.client('redshift')
 BUCKET = 'nyc311forinsight'
 
 # set parameters for accessing database of redshift
-host = ''
+host = host
 database = 'db311'
-user = ''
-password = ''
+user = user
+password = password
 port = '5439'
 
 
@@ -24,10 +25,10 @@ def lambda_handler(event, context):
     store the new result into redshift
     '''
     res = []
-    KEY = '/newest_' + str(datetime.now().date() - timedelta(days=2)) + '.csv'
+    KEY = '/newest_' + str(datetime.now().date() - timedelta(days=7)) + '.csv'
     put_data_to_redshift(host, database, user, password, port, res, KEY)
     return ''
-
+    
 
 def put_data_to_redshift(host, database, user, password, port, res, KEY):
     '''
@@ -38,11 +39,11 @@ def put_data_to_redshift(host, database, user, password, port, res, KEY):
                                password=password, port=port)
     except Exception as err:
         print(err)
-
+        
     with con.cursor() as cur:
         insert_query = ("truncate eventsNew;"
                         "copy eventsNew from 's3://nyc311forinsight" + str(KEY) + "' " +
-                        "credentials 'aws_access_key_id=<>;aws_secret_access_key=<>' " +
+                        "credentials 'aws_access_key_id=" + keyid +";aws_secret_access_key=" + key + "' " +
                         "csv " +
                         "timeformat 'YYYY-MM-DDTHH:MI:SS';")
         cur.execute(insert_query, res)

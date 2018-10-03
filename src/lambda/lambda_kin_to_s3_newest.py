@@ -6,7 +6,7 @@ import time
 from datetime import datetime, timedelta
 from botocore.exceptions import ClientError
 
-# set parameters for connecting with kinesis and s3
+# set parameters for connecting
 client_k = boto3.client('kinesis')
 client_s3 = boto3.client('s3')
 client_l = boto3.client('lambda')
@@ -15,7 +15,8 @@ BUCKET = 'nyc311forinsight'
 
 
 # rules for filling missing values
-change_ref = {'agency':'unknown', 'closed_date':'2050-01-10T04:08:32.000',
+change_ref = {'agency':'unknown',
+              'closed_date':'2050-01-10T04:08:32.000',
               'complaint_type':'unknown',
               'created_date':'2000-09-14T04:08:32.000',
               'latitude':'20.86125849849244',
@@ -46,31 +47,32 @@ def lambda_handler(event, context):
                     raise
                 print ('Throughput exceeded!')
                 time.sleep(0.2)
-                break
+                continue
      
             # check number of data been found    
             print(len(out['Records']))
             
-            # filter and output records of 7 days ago
-            one_ago = str(datetime.now().date() - timedelta(days=2))
-            start = time.time()
+            # filter and output records of most recent 7 days
+            time_threshold = (datetime.now().date() - timedelta(days=7))
             for record in out['Records']:
                 temp = json.loads(record['Data'])
                 cleaned = dict_clean(temp, change_ref)
-                
-                if cleaned['created_date'][:10] == one_ago:
+                rec_date = datetime.strptime(cleaned['created_date'][:10],
+                                             '%Y-%m-%d').date()
+                if rec_date > time_threshold:
                     res.append(cleaned)
+            
+            # search the next shard interator    
             shard_it = out['NextShardIterator']
-            delta = time.time() - start
-            time.sleep(0.3 - delta)
+            time.sleep(0.2)
     
-    # put records of 7 days ago into s3
+    # put records of into s3
     print(len(res))
     final = '\n'.join([str(d['agency']) + ',' + str(d['closed_date']) + ',' +\
             str(d['complaint_type']) + ',' + str(d['created_date']) +\
             ',' + str(d['latitude']) + ',' + str(d['longitude']) + ',' +\
             str(d['open_data_channel_type']) for d in res])
-    put_data_to_s3(client_s3, final, BUCKET)
+    put_data_to_s3(client_s3, final, BUCKET, time_threshold)
     invoke_next_lam(client_l)
 
 
@@ -90,11 +92,11 @@ def dict_clean(temp, change_ref):
     return dict_keep
  
     
-def put_data_to_s3(client_s3, final, BUCKET):
+def put_data_to_s3(client_s3, final, BUCKET, time_threshold):
     '''
     put data into database
     '''
-    KEY = 'newest_' + str(datetime.now().date() - timedelta(days=2)) + '.csv'
+    KEY = 'newest_' + str(time_threshold) + '.csv'
     client_s3.put_object(Body=final, Bucket=BUCKET, Key=KEY)
     
 

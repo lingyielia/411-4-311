@@ -1,3 +1,4 @@
+from setting import host, user, password
 import boto3
 import base64
 import time
@@ -12,10 +13,10 @@ client_r = boto3.client('redshift')
 BUCKET = 'nyc311forinsight'
 
 # set parameters for accessing database of redshift
-host = ''
+host = host
 database = 'db311'
-user = ''
-password = ''
+user = user
+password = password
 port = '5439'
 
 
@@ -24,18 +25,21 @@ def lambda_handler(event, context):
     retrive the target records, format them into list of tuples,
     store the new result into redshift
     '''
-    res = []
-    KEY = '/records_' + str(datetime.now().date() - timedelta(days=7)) + '.csv'
-    with smart_open('s3://' + BUCKET + KEY, 'rb') as fin:
-        for line in fin:
-            temp = line.decode('utf8').split(',')
-            formatted = tuple(temp)
-            res.append(formatted)
-    print(len(res))
-
-    put_data_to_redshift(host, database, user, password, port, res)
+    custom_dict = event['custom']
+    print(custom_dict.values())
+    for i in custom_dict.values():
+        res = []
+        KEY = '/records_' + str(i) + '.csv'
+        with smart_open('s3://' + BUCKET + KEY, 'rb') as fin:
+            for line in fin:
+                temp = line.decode('utf8').split(',')
+                formatted = tuple(temp)
+                res.append(formatted)
+        print(len(res))
+    
+        put_data_to_redshift(host, database, user, password, port, res)
     return ''
-
+    
 
 def put_data_to_redshift(host, database, user, password, port, res):
     '''
@@ -46,7 +50,7 @@ def put_data_to_redshift(host, database, user, password, port, res):
                                password=password, port=port)
     except Exception as err:
         print(err)
-
+        
     with con.cursor() as cur:
         records_list_template = ','.join(['%s'] * len(res))
         insert_query = 'insert into events values {0}'.format(records_list_template)
