@@ -1,11 +1,11 @@
 # Daily Review System
-This project will build a daily review dashboard of 311 service requests among several cities. With new service records being available via APIs, the data transform process is scheduled daily to produce a daily review dashboard describe the performance of each agency that responsible for resolving requested issues.
+This is a daily review dashboard showing 311 complaints resolution performance for government agencies. With new complaint records being available via API, the data transform process is scheduled daily to extract the new data and produce a daily review dashboard describing the performance of each agency who is responsible for resolving the requested issues, compared with the historical records.
+
+-------------------
+| ->  [Demo]()        |                ->  [Slides]()           |
+| ------------- |:-------------:|
+
+-------------------
 
 ## Diagram
 ![diagram](fig/diagram.png)
-
-## Tools explained
-[Kinesis Data Streams](https://docs.aws.amazon.com/streams/latest/dev/introduction.html): real-time aggregation of data followed by loading the aggregate data into a data warehouse
-
-
-## Data profiling
