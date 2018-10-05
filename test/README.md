@@ -1,0 +1,2 @@
+- [apistatus.txt](https://github.com/lingyielia/411-4-311/blob/master/test/apistatus.txt): Test input for lambda function [lambda_check_api_status.py](https://github.com/lingyielia/411-4-311/blob/master/src/lambda/lambda_check_api_status.py)
+- [payload_for_lam_api_to_kin.txt](https://github.com/lingyielia/411-4-311/blob/master/test/payload_for_lam_api_to_kin.txt): Test payload for [lambda_api_to_kin.py](https://github.com/lingyielia/411-4-311/blob/master/src/lambda/lambda_api_to_kin.py)
