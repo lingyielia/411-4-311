@@ -32,5 +32,5 @@ __Figure 2.__ Data Flow Diagram. For historical data processing, the EMR was uti
 
 ## 5. Getting Started
 ```
-bash ./run_cloudwatch_trigger.sh
+bash ./src/cloudwatch/run_cloudwatch_trigger.sh
 ```
