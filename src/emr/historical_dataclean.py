@@ -1,3 +1,7 @@
+#
+# This pyspark job read all historical data from s3
+# Data can be stored into S3 or postgres in RDS after cleaning
+#
 from pyspark.sql.types import *
 
 # define schema
